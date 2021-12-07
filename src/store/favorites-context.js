@@ -2,15 +2,17 @@ import { createContext, useState } from "react";
 import { useEffect } from "react/cjs/react.development";
 
 const FavoritesContext = createContext({
+  favorites: [],
+  totalFavorites: 0,
   getFavorites: () => {},
   addFavorite: (book) => {},
   removeFavorite: (book) => {},
   isFavorite: (book) => {},
+  
 });
 
 export const FavoritesProvider = ({ children }) => {
   const [favorites, setFavorites] = useState([]);
-
   /**
    * Adds a book to the favorites state after sending a POST request to Firebase.
    *
@@ -29,7 +31,35 @@ export const FavoritesProvider = ({ children }) => {
    *  book: all attributes from the favorited book object
    * }
    */
-  const addFavorite = async (book) => {};
+  const addFavorite = async (book) => {
+
+    fetch(
+    'https://readalicious-1a656-default-rtdb.firebaseio.com/favorites.json',
+    {
+      method: 'POST',
+      body: JSON.stringify(book),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+   /* ).then(()=>{
+      alert(book.title + ' was added to favorites');
+      //return resp.json();
+    }); */
+    .then((resp) => {
+      alert(book.title + ' was added to your favorites');
+      return resp.json();
+      
+    })
+    .then((data) => {
+      setFavorites((prevUserFavorites) => {
+        return prevUserFavorites.concat({
+          ...favorites,
+          favoriteId: data.name,
+        });
+      });
+    });
+  };
 
   /**
    * Remove a favorite book from the favorites state after sending a DELETE request to Firebase.
@@ -55,7 +85,9 @@ export const FavoritesProvider = ({ children }) => {
    * This extracts the book object from each favorite and returns an array of books to the context consumer.
    */
   const getFavorites = () => {
-    return [];
+   // let favsArray = favorites.map((favs) => <div>favs.title</div>);
+
+    return favorites ;
   };
 
   /**
@@ -64,7 +96,29 @@ export const FavoritesProvider = ({ children }) => {
    * GET request should be formatted as follows (same as POST request) ...
    * https://{your-firebase-url}/favorites.json
    */
-  useEffect(() => {}, []);
+  /*useEffect(() => {
+    
+
+  }, []);
+  */
+ useEffect(() => {
+  fetch(
+    "https://readalicious-1a656-default-rtdb.firebaseio.com/favorites.json"
+  )
+    .then((response) => {
+      return response.json();
+    })
+    .then((data) => {
+      const favorites = [];
+
+      for (const key in data) {
+        favorites.push({ ...data[key], favoriteId: key });
+      }
+
+      setFavorites(favorites);
+     console.log(favorites);
+    });
+}, []);
 
   /**
    * Object to return to context consumers. This is their interface to interact with this context.
